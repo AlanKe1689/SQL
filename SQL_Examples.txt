@@ -1,0 +1,475 @@
+--Part A
+
+--1
+SELECT	Suppliers.SupplierID,
+    	Suppliers.Name,
+    	Products.ProductName,
+    	Products.ReorderLevel,
+    	Products.UnitsInStock,
+    	abs(Products.UnitsInStock - Products.ReorderLevel) AS StockLow
+FROM	Suppliers INNER JOIN Products
+	ON	Suppliers.SupplierID = Products.SupplierID
+WHERE	UnitsInStock < ReorderLevel
+ORDER BY Name
+----------------------------------------------------------------------------------------------------|
+--2
+SELECT	OrderDetails.OrderID,
+    	(OrderDetails.Quantity * OrderDetails.UnitPrice) AS Cost,
+    	Products.ProductID,
+    	Products.ProductName,
+    	Suppliers.SupplierID,
+    	Suppliers.Name
+FROM	OrderDetails INNER JOIN Products
+	ON	OrderDetails.ProductID = Products.ProductID
+    	INNER JOIN Suppliers
+	ON	Products.SupplierID = Suppliers.SupplierID
+WHERE	Quantity >= 90
+ORDER BY Cost
+----------------------------------------------------------------------------------------------------|
+--3
+SELECT	Customers.CompanyName,
+    	Customers.ContactName,
+    	Customers.Phone,
+    	Customers.Country,
+    	SUM(Orders.Freight) AS Total_Freight
+FROM	Customers INNER JOIN Orders
+	ON	Customers.CustomerID = Orders.CustomerID
+WHERE	Orders.OrderDate >= 'July 1, 1992' AND Orders.OrderDate <= 'June 30, 1993'
+GROUP BY Customers.CompanyName, Customers.ContactName, Customers.Phone, Customers.Country
+ORDER BY Customers.CompanyName
+----------------------------------------------------------------------------------------------------|
+--4
+SELECT	Customers.CustomerID,
+   	 Customers.Phone,
+   	 CONCAT(LastName,', ',FirstName) AS Name,
+   	 Orders.OrderID,
+   	 FORMAT(Orders.OrderDate, 'yyyy-MM-dd') AS OrderDate
+FROM	Customers INNER JOIN Orders
+    ON Customers.CustomerID = Orders.CustomerID INNER JOIN Employees
+    ON Orders.EmployeeID = Employees.EmployeeID
+WHERE    ShippedDate IS NULL AND employees.City = 'New Westminster'
+ORDER BY CompanyName, OrderDate
+----------------------------------------------------------------------------------------------------|
+--5
+SELECT	Products.ProductID,
+    	Products.ProductName,
+    	Categorys =
+        	CASE Products.CategoryID
+            	WHEN 1 THEN 'Beverage'
+            	WHEN 2 THEN 'Sauce & Spread'
+            	WHEN 3 THEN 'Dessert'
+            	WHEN 4 THEN 'Cheese'
+            	WHEN 5 THEN 'Bread'
+            	WHEN 6 THEN 'Meat'
+            	WHEN 7 THEN 'Miscellaneous'
+            	WHEN 8 THEN 'Seafood'
+            	ELSE 'Unknown'
+        	END,
+    	Products.UnitPrice,
+    	ROUND((Products.UnitPrice * 1.15), 2) AS NewPrice,
+    	Suppliers.Name AS SupplierName
+FROM	Products INNER JOIN Suppliers
+	ON	Products.SupplierID = Suppliers.SupplierID
+WHERE	Products.UnitPrice >= 20.00
+ORDER BY Products.ProductName
+----------------------------------------------------------------------------------------------------|
+--6
+SELECT      'Customers'AS TableName,
+   	 Customers.CompanyName AS Name,
+   	 Customers.ContactName,
+   	 Customers.Phone
+FROM Customers
+WHERE Customers.Country IN ('Canada','Italy','UK')
+
+UNION
+
+SELECT      'Suppliers',
+   	 Suppliers.Name,
+   	 '',
+   	 ''
+FROM Suppliers
+WHERE Suppliers.SupplierID >=3 AND Suppliers.SupplierID <=8
+ORDER BY Name
+----------------------------------------------------------------------------------------------------|
+--7
+SELECT	CASE
+			WHEN Employees.MiddleName IS NULL	THEN CONCAT(Employees.FirstName, ' ', Employees.LastName)
+			ELSE CONCAT(Employees.FirstName, ' ', Employees.MiddleName, ' ', Employees.LastName)
+		END AS EmployeeName,
+		Orders.ShipCity,
+		COUNT(Orders.ShipCity) AS Count
+FROM		Employees INNER JOIN Orders
+	ON	Employees.EmployeeID = Orders.EmployeeID
+GROUP BY CASE
+			WHEN Employees.MiddleName IS NULL	THEN CONCAT(Employees.FirstName, ' ', Employees.LastName)
+			ELSE CONCAT(Employees.FirstName, ' ', Employees.MiddleName, ' ', Employees.LastName)
+		END,
+		Orders.ShipCity
+HAVING COUNT(Orders.ShipCity) >= 7
+ORDER BY EmployeeName
+----------------------------------------------------------------------------------------------------|
+--8
+SELECT	Orders.OrderID,
+		Customers.CompanyName,
+		OrderDetails.Quantity * OrderDetails.UnitPrice AS 'Order Cost',
+		FORMAT(Orders.ShippedDate, 'MMM dd yyyy') AS ShippedDate,
+		DATEDIFF(day, Orders.OrderDate, Orders.ShippedDate) AS Days
+FROM		Customers INNER JOIN Orders
+	ON	Customers.CustomerID = Orders.CustomerID
+		INNER JOIN OrderDetails
+	ON	Orders.OrderID = OrderDetails.OrderID
+WHERE	ShippedDate >= 'Jan 1 1994'
+	AND	ShippedDate <= 'Jan 31 1994'
+ORDER BY ShippedDate
+----------------------------------------------------------------------------------------------------|
+--9
+SELECT	Orders.OrderID,
+		Products.ProductID,
+		Customers.CompanyName,
+		OrderDetails.Quantity * Products.UnitPrice AS OrderCost,
+		FORMAT(DATEADD(day, 10, Orders.ShippedDate), 'MMM dd yyyy') AS ShippedDate
+FROM		Customers INNER JOIN Orders
+	ON	Customers.CustomerID = Orders.CustomerID
+		INNER JOIN OrderDetails
+	ON	Orders.OrderID = OrderDetails.OrderID
+		INNER JOIN Products
+	ON	OrderDetails.ProductID = Products.ProductID
+WHERE	YEAR(Orders.OrderDate) = 1994
+	AND	OrderDetails.Quantity * Products.UnitPrice >= 2500.00
+ORDER BY Customers.CompanyName
+----------------------------------------------------------------------------------------------------|
+--10
+SELECT	Orders.OrderID,
+		OrderDetails.UnitPrice,
+		OrderDetails.Quantity,
+		Products.ProductName,
+		CONCAT(Employees.FirstName, ' ', Employees.LastName) AS EmployeeName
+FROM		Employees INNER JOIN Orders
+	ON	Employees.EmployeeID = Orders.EmployeeID
+		INNER JOIN OrderDetails
+	ON	Orders.OrderID = OrderDetails.OrderID
+		INNER JOIN Products
+	ON	OrderDetails.ProductID = Products.ProductID
+WHERE	Orders.ShipCountry = 'Italy'
+	AND	OrderDetails.Quantity >= 30
+ORDER BY OrderDetails.UnitPrice
+----------------------------------------------------------------------------------------------------|
+--Part B
+
+--1
+CREATE view suppliers_products_vw
+AS
+SELECT	Products.ProductID,
+		Products.QuantityPerUnit,
+		Products.UnitsInStock,
+		Products.UnitsOnOrder,
+		Suppliers.Name AS SupplierName
+FROM		Products INNER JOIN Suppliers
+	ON	Products.SupplierID = Suppliers.SupplierID
+WHERE	Products.UnitsOnOrder > 0
+----------------------------------------------------------------------------------------------------|
+--2
+SELECT	Customers.CustomerID,
+		Customers.ContactName,
+		Customers.Phone,
+		Orders.OrderID,
+		FORMAT(Orders.OrderDate, 'yyyy-MM-dd') AS OrderDate
+FROM		Customers INNER JOIN Orders
+	ON	Customers.CustomerID = Orders.CustomerID
+WHERE	Orders.ShippedDate IS NULL
+	AND	Orders.EmployeeID IN
+		(SELECT	Employees.EmployeeID
+		FROM	Employees
+		WHERE	City = 'New Westminster')
+ORDER BY Customers.CompanyName, Orders.OrderDate
+----------------------------------------------------------------------------------------------------|
+--3
+INSERT INTO Employees
+(EmployeeID, LastName, FirstName, BirthDate)
+VALUES
+(10, 'Stevenson', 'Joseph', '1976-05-12'),
+(11, 'Thompson', 'Mary-Beth', '1999-09-10')
+----------------------------------------------------------------------------------------------------|
+--4
+CREATE view employee_inform_vw
+AS
+SELECT	Employees.EmployeeID,
+   	 CONCAT(Employees.FirstName, ' ',Employees.LastName)AS Name,
+   	  CASE
+        	WHEN Employees.Phone IS NULL   											 THEN ''
+        	ELSE CONCAT('(',LEFT(Employees.Phone,3),')',SUBSTRING(Employees.Phone, 4, 3),'-',RIGHT(Employees.Phone,4))
+    	END AS PhoneNumber,
+   	 FORMAT(Employees.BirthDate,'MMM dd yyyy')AS BirthDate
+FROM    Employees
+
+SELECT *
+FROM employee_inform_vw
+WHERE EmployeeID IN ( 3, 9, 11 );
+----------------------------------------------------------------------------------------------------|
+--5
+UPDATE Customers
+SET Fax = 'Unknown'
+WHERE Fax IS NULL
+----------------------------------------------------------------------------------------------------|
+--6
+CREATE view sales_by_customers_vw
+AS
+SELECT	Customers.CompanyName,
+   	 CONCAT(Employees.LastName, ', ',Employees.FirstName)AS EmployeeName,
+   	 SUM(OrderDetails.Quantity)AS SumQuantity
+FROM    	OrderDetails INNER JOIN Orders
+	ON	Orders.OrderID = OrderDetails.OrderID
+   		 INNER JOIN Employees
+    ON	Orders.EmployeeID = Employees.EmployeeID
+   		 INNER JOIN Customers
+    ON	Orders.CustomerID = Customers.CustomerID
+GROUP BY Customers.CompanyName,Employees.LastName,Employees.FirstName
+HAVING SUM(OrderDetails.Quantity) >=500
+
+--SELECT *
+--FROM sales_by_customers_vw
+--ORDER BY CompanyName;
+----------------------------------------------------------------------------------------------------|
+--7
+DELETE Employees
+WHERE Phone IS NULL
+----------------------------------------------------------------------------------------------------|
+--8
+BEGIN TRAN
+
+UPDATE Employees
+SET Phone = '6042537581'
+WHERE EmployeeID = 10
+
+ROLLBACK TRAN
+----------------------------------------------------------------------------------------------------|
+--9
+CREATE view order_shipped_vw
+AS
+SELECT	Orders.OrderID,
+   	 FORMAT(Orders.OrderDate,'yyyy-MM-dd')AS OrderDate,
+   	 FORMAT(Orders.ShippedDate,'yyyy-MM-dd')AS ShippedDate,
+   	 Orders.ShipName,
+   	 CONCAT(Employees.FirstName,' ',Employees.LastName)AS EmployeeName,
+   	 Shippers.CompanyName,
+   	 ABS(DATEDIFF(DAY,Orders.ShippedDate,Orders.OrderDate))AS Days
+FROM    	Orders INNER JOIN Employees
+    ON	Orders.EmployeeID = Employees.EmployeeID
+   		 INNER JOIN Shippers
+    ON	Orders.ShipperID = Shippers.ShipperID
+WHERE ABS(DATEDIFF(DAY,Orders.ShippedDate,Orders.OrderDate)) > 10 AND
+   	 YEAR(Orders.OrderDate) >= 1993
+
+--SELECT *
+--FROM order_shipped_vw
+--ORDER BY OrderDate;
+----------------------------------------------------------------------------------------------------|
+--10
+SELECT    Orders.OrderID,
+   	 Customers.CompanyName,
+   	 Customers.ContactName,
+   	 Customers.Phone,
+   	 FORMAT(Orders.OrderDate,'yyyy.MM.dd')AS OrderDate,
+   	 OrderDetails.Quantity
+FROM OrderDetails INNER JOIN Orders
+    ON Orders.OrderID = OrderDetails.OrderID
+   	 INNER JOIN Customers
+    ON Orders.CustomerID = Customers.CustomerID
+WHERE Orders.OrderDate >= '1994.03.01' AND
+    Orders.ShippedDate IS NULL AND
+    OrderDetails.ProductID IN
+    (SELECT Products.ProductID
+   	 FROM Products
+   	 WHERE Products.Discontinued = 1)
+----------------------------------------------------------------------------------------------------|
+
+--Part C
+
+--1
+CREATE PROCEDURE orders_by_dates_sp
+    @startDate date = NULL,
+    @endDate date = NULL
+AS
+IF (@startDate IS NULL AND @endDate IS NULL)
+    BEGIN
+   	 PRINT 'Both dates missing'
+    END
+ELSE IF (@startDate IS NULL OR @endDate IS NULL)
+    BEGIN
+   	 PRINT 'One date is missing'
+    END
+ELSE
+    BEGIN
+   	 SELECT    Orders.OrderID,
+   			 OrderDetails.ProductID,
+   			 Customers.CompanyName AS CustomerCompany,
+   			 FORMAT(Orders.OrderDate,'MMM dd yyyy')AS OrderDate,
+   			 FORMAT(Orders.ShippedDate,'MMM dd yyyy')AS ShippedDate
+   	 FROM Orders INNER JOIN OrderDetails
+   		 ON Orders.OrderID = OrderDetails.OrderID
+   		 INNER JOIN Customers
+   		 ON Orders.CustomerID = Customers.CustomerID
+   	 WHERE Orders.ShippedDate BETWEEN @startDate AND @endDate
+   	 ORDER BY Orders.ShippedDate
+    END
+
+--EXECUTE orders_by_dates_sp;   		 -- Both dates missing. Print message
+
+--EXECUTE orders_by_dates_sp '1994-03-01';   	 -- One date is missing. Print message
+
+--EXECUTE orders_by_dates_sp '1994-03-01', '1994-03-31';    --Print results below.
+----------------------------------------------------------------------------------------------------|
+--2
+CREATE TRIGGER insert_employee_tr
+ON Employees
+AFTER INSERT
+AS
+
+IF (SELECT Phone FROM inserted) IS NULL
+    BEGIN
+   	 PRINT 'Phone number is incorrect'
+   	 ROLLBACK
+    END
+ELSE IF (SELECT Phone FROM inserted) = ''
+    BEGIN
+   	 PRINT 'Phone number is incorrect'
+   	 ROLLBACK
+    END
+
+--INSERT Employees   	 -- Trigger should prevent the insert and print message.
+--VALUES( 20, 'Doe', 'Jane', 'Sally', '15 Pine Street', 'Vancouver', 'BC', 'V6X 4T6', NULL, '1975-05-23' );
+
+--INSERT Employees   	 -- Trigger should prevent the insert and print message.
+--VALUES( 20, 'Doe', 'Jane', 'Sally', '15 Pine Street', 'Vancouver', 'BC', 'V6X 4T6', '', '1975-05-23' );
+
+--INSERT Employees   	 --Trigger should allow the insert.
+--VALUES( 20, 'Doe', 'Jane', 'Sally', '15 Pine Street', 'Vancouver', 'BC', 'V6X 4T6', '6045552581', '1975-05-23' );
+----------------------------------------------------------------------------------------------------|
+--5
+CREATE PROCEDURE discontinued_products_sp
+    @Discontinued int = NULL
+AS
+IF (@Discontinued IS NULL)
+    BEGIN
+   	 PRINT 'Specify discontinue option.'
+    END
+ELSE
+    BEGIN
+   	 SELECT    Products.ProductID,
+   			 Products.ProductName,
+   			 Products.UnitsInStock,
+   			 Suppliers.Name
+   	 FROM Products INNER JOIN Suppliers
+   		 ON Products.SupplierID = Suppliers.SupplierID
+   	 WHERE Products.Discontinued = @Discontinued
+   	 ORDER BY Products.ProductName
+    END
+
+EXECUTE discontinued_products_sp;    -- Discontinued option missing. Print message.
+
+EXEC discontinued_products_sp 1;    -- Print result set below.
+----------------------------------------------------------------------------------------------------|
+--6
+CREATE TRIGGER check_shippeddate_tr
+ON Orders
+AFTER Update
+AS
+IF	(SELECT	inserted.ShippedDate
+	FROM		inserted) < 
+	(SELECT	inserted.RequiredDate
+	FROM		inserted)
+	BEGIN
+		PRINT 'Order was shipped successfully'
+	END
+ELSE
+	BEGIN
+		PRINT 'Order was shipped after the required date'
+	END;
+
+
+UPDATE Orders   					 -- Trigger should print message that shipped
+SET ShippedDate = '1994-04-20'   	 -- date late, and row will update.
+WHERE OrderID = 11051
+  AND CustomerID = 'LAMAI'
+  AND EmployeeID = 7;
+
+UPDATE Orders   				-- Trigger should print message that order
+SET ShippedDate = '1994-04-10'   		 -- shipped on time, and row will update.
+WHERE OrderID = 11039
+  AND CustomerID = 'LINOD'
+  AND EmployeeID = 1;
+----------------------------------------------------------------------------------------------------|
+--7
+CREATE TRIGGER tr_supplier_deleted	         -- tr_jobs_deleted seems wrong in instructions
+ON Suppliers
+INSTEAD OF DELETE
+AS
+
+UPDATE Suppliers
+SET Name = 'Do not use'
+FROM Suppliers INNER JOIN deleted
+    ON Suppliers.SupplierID = deleted.SupplierID
+
+--DELETE FROM Suppliers   	-- Trigger should update supplier name  
+--WHERE SupplierID = 3;   	 	-- but row should still be in Suppliers table
+----------------------------------------------------------------------------------------------------|
+--8
+CREATE PROCEDURE shipping_date_sp
+	@shippedDate	smalldatetime = NULL
+AS
+IF(@shippedDate IS NULL)
+	BEGIN
+		PRINT 'Please enter a valid shipped date'
+	END
+ELSE
+	BEGIN
+		SELECT	Orders.OrderID,
+				Customers.CompanyName,
+				Customers.Phone AS CustomerPhone,
+				FORMAT(Orders.OrderDate, 'MMM dd yyyy') AS OrderDate,
+				FORMAT(Orders.RequiredDate, 'MMM dd yyyy') AS 	RequiredDate,
+				FORMAT(Orders.ShippedDate, 'MMM dd yyyy') AS ShippedDate
+		FROM	Orders INNER JOIN Customers
+			ON	Orders.CustomerID = Customers.CustomerID
+		WHERE	Orders.ShippedDate = @shippedDate
+		ORDER BY Orders.OrderDate
+	END
+----------------------------------------------------------------------------------------------------|
+--9
+CREATE PROCEDURE sales_by_employees_sp
+AS
+SELECT	Employees.EmployeeID,
+		CONCAT(Employees.FirstName, ' ', Employees.LastName) AS Name,
+		SUM(OrderDetails.Quantity * OrderDetails.UnitPrice) AS InvoiceCost
+FROM	Employees INNER JOIN Orders
+	ON	Employees.EmployeeID = Orders.EmployeeID
+		INNER JOIN OrderDetails
+	ON	Orders.OrderID = OrderDetails.OrderID
+GROUP BY Employees.EmployeeID, CONCAT(Employees.FirstName, ' ', Employees.LastName), Employees.LastName
+ORDER BY Employees.LastName
+----------------------------------------------------------------------------------------------------|
+--10
+CREATE FUNCTION determine_discount
+	(@quantity	smallint,
+	 @increaseValue	real)
+RETURNS @Result TABLE
+(CustomerID nvarchar(5), CompanyName nvarchar(40), Discount real, NewDiscount real)
+AS
+BEGIN
+	INSERT INTO @Result
+		SELECT	Customers.CustomerID,
+				Customers.CompanyName,
+				OrderDetails.Discount,
+				(@increaseValue + OrderDetails.Discount) AS NewDiscount
+		FROM	Customers INNER JOIN Orders
+			ON	Customers.CustomerID = Orders.CustomerID
+				INNER JOIN OrderDetails
+			ON	Orders.OrderID = OrderDetails.OrderID
+				INNER JOIN Products
+			ON	OrderDetails.ProductID = Products.ProductID
+		WHERE	Products.Discontinued = 0
+			AND	OrderDetails.Discount > 0
+			AND	OrderDetails.Quantity = @quantity
+	RETURN
+END;
+
